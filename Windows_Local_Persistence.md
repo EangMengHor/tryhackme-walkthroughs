@@ -2,7 +2,7 @@
 
 This walkthrough explains common Windows local persistence techniques (services, scheduled tasks, registry Autoruns, user account persistence) used in the TryHackMe "Windows Local Persistence" room. Step-by-step commands, output and remediation notes included.
 
-# Windows Local Persistence — TryHackMe Walkthrough Task 1 to 5
+Task 1 to 5
 **Difficulty:** Medium  
 **Author:** Meng Hor 
 

